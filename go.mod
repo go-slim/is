@@ -1,4 +1,4 @@
-module zestack.dev/is
+module go-slim.dev/is
 
 go 1.21.0
 
