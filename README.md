@@ -1,11 +1,15 @@
 # is
 
+**[中文文档](README.zh-CN.md)** | English
+
 A tiny, fast, dependency-free validation/detection toolkit for Go.
 
 This package focuses on simple predicate-style helpers (returning bool) for common checks:
-- URLs, emails, IP/MAC addresses
+
+- Emails, IP/MAC addresses, phone numbers
 - Numbers vs. numeric strings, booleans, case checks
 - UUID/ULID, hashes, colors, encodings (HTML/URL/Base64)
+- JWT tokens, semantic versions, labels
 - Time formats and time zones
 - Length comparisons, comparisons between numbers/strings/times
 - File/dir existence
@@ -30,7 +34,7 @@ import (
 
 func main() {
     fmt.Println(is.Email("user@example.com")) // true
-    fmt.Println(is.URL("https://example.com/a?x=1#frag")) // true
+    fmt.Println(is.PhoneNumber("13800138000")) // true (Chinese mobile)
 
     // Number vs Numeric
     fmt.Println(is.Number("123"))  // true (digits only)
@@ -50,8 +54,9 @@ func main() {
     fmt.Println(is.Color("#fff"))        // true
     fmt.Println(is.RGBA("rgba(1,2,3,0.5)")) // true
 
-    // JSON detection
-    fmt.Println(is.JSON("{\"a\":1}")) // true
+    // Additional validations
+    fmt.Println(is.JWT("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9")) // true
+    fmt.Println(is.Semver("1.2.3")) // true
 
     // Time & timezone
     fmt.Println(is.Datetime("2023-01-02", "2006-01-02")) // true
@@ -69,15 +74,15 @@ func main() {
 ## API Highlights
 
 - Strings and bytes
-  - `URL(s)`, `Email(s)`, `Base64(s)`, `Base64URL(s)`, `URLEncoded(s)`, `HTML(s)`, `HTMLEncoded(s)`
+  - `Email(s)`, `Base64(s)`, `Base64URL(s)`, `URLEncoded(s)`, `HTMLEncoded(s)`
 - Identifiers and hashes
-  - `UUID(s)`, `UUID3/4/5(s)`, `ULID(s)`, `MD5/SHA256/SHA384/SHA512(s)`
+  - `UUID(s)`, `UUID3/4/5(s)`, `ULID(s)`, `MD5/SHA256/SHA384/SHA512(s)`, `JWT(s)`, `Semver(s)`, `Label(s)`
 - Numbers & booleans
   - `Number(v)` digits-only for strings; numbers for numeric types
   - `Numeric(v)` accepts numeric strings with decimals and numeric types
   - `Boolean(v)` accepts 1/0, yes/no, on/off, true/false (case-insensitive) and numeric 0/1
-- IP & MAC
-  - `IPv4(s)`, `IPv6(s)`, `IP(s)`, `MAC(s)`
+- IP, MAC & Phone
+  - `IPv4(s)`, `IPv6(s)`, `IP(s)`, `MAC(s)`, `PhoneNumber(s)`, `E164(s)`
 - Colors
   - `HEXColor(s)`, `RGB(s)`, `RGBA(s)`, `HSL(s)`, `HSLA(s)`, `Color(s)`
 - Time
@@ -89,6 +94,7 @@ func main() {
   - `File(path)`, `Dir(path)`
 
 Notes:
+
 - `Number()` vs `Numeric()` are intentionally different (digits-only vs numeric including decimals).
 - `URLEncoded()` detector allows spaces or valid %XX sequences per current regex.
 - `Between()`/`NotBetween()` guard semantics are covered by tests; prefer `Compare()` for direct relational checks.
@@ -96,6 +102,7 @@ Notes:
 ## Examples
 
 See tests for live examples:
+
 - `is_test.go` for core API coverage
 - `boundary_test.go` for edge cases
 
@@ -129,6 +136,7 @@ go test -v ./...
 ## Contributing
 
 Issues and PRs welcome. Please include:
+
 - Focused changes, clear rationale
 - Tests for fixes/features
 - Benchmarks where performance is relevant

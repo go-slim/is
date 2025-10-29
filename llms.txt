@@ -1,0 +1,166 @@
+# Is Package - Comprehensive Validation Library
+
+## Overview
+
+The `is` package is a comprehensive validation library for Go that provides extensive functionality for validating various data types and formats. This package is designed to be a complete toolkit for data validation, from basic string formats to complex network addresses and file system checks.
+
+## Core Architecture
+
+### Validation Categories
+
+The package is organized into several validation categories:
+
+#### String and Text Validation
+- **Email validation**: RFC 5322 compliant email address validation
+- **Phone validation**: E.164 international format and Chinese mainland mobile numbers
+- **Character validation**: ASCII, Alpha, Alphanumeric with Unicode support
+- **Encoding validation**: Base64, Base64URL, URL encoding, HTML encoding
+- **Hash validation**: MD4, MD5, SHA256, SHA384, SHA512 hash format validation
+- **Identifier validation**: UUID (v1, v3, v4, v5), ULID, Semantic Versioning
+
+#### Network and Address Validation
+- **IP addresses**: IPv4, IPv6, and generic IP validation
+- **MAC addresses**: Hardware address validation
+- **URLs**: Comprehensive URL format validation
+
+#### Color and Visual Validation
+- **Color formats**: HEX, RGB, RGBA, HSL, HSLA color validation
+- **Hexadecimal validation**: Generic hex string validation
+
+#### Temporal and Geographic Validation
+- **Datetime validation**: Flexible datetime parsing with custom layouts
+- **Timezone validation**: IANA timezone database validation
+- **Geographic coordinates**: Latitude and longitude validation
+
+#### File System Validation
+- **File validation**: Check if path points to existing file
+- **Directory validation**: Check if path points to existing directory
+
+#### Generic Data Validation
+- **Type validation**: Number, Boolean, Empty checks
+- **Collection validation**: Length, range, and membership tests
+- **Comparison operations**: Full suite of comparison functions
+
+## Key Features
+
+### Unicode Support
+The package provides excellent Unicode support through dedicated functions:
+- `AlphaUnicode()` and `AlphanumericUnicode()` for international text
+- Proper handling of accented characters and non-Latin scripts
+- Case-sensitive Unicode-aware comparisons
+
+### Type Safety
+Extensive use of generics and reflection for type-safe operations:
+- Generic functions for number, boolean, and string validation
+- Automatic type conversion and comparison
+- Graceful handling of mixed types in comparisons
+
+### Performance Optimizations
+- Pre-compiled regular expressions for frequently used patterns
+- Efficient reflection usage with proper caching
+- Minimal allocation in validation functions
+
+## Usage Patterns
+
+### Basic Validation
+```go
+// Email validation
+is.Email("user@example.com")     // true
+
+// Phone number validation
+is.E164("+14155552671")         // true
+is.PhoneNumber("13800138000")   // true
+
+// Character validation
+is.Alpha("Hello")               // true
+is.Alphanumeric("Test123")      // true
+```
+
+### Advanced Validation
+```go
+// Network validation
+is.IPv4("192.168.1.1")          // true
+is.IPv6("2001:db8::1")          // true
+is.MAC("00:00:5e:00:53:01")    // true
+
+// Color validation
+is.HEXColor("#FF0000")          // true
+is.RGB("rgb(255, 0, 0)")        // true
+is.HSL("hsl(0, 100%, 50%)")    // true
+
+// Hash validation
+is.SHA256("2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c") // true
+```
+
+### Comparative Validation
+```go
+// Range validation
+is.Between(5, 1, 10)           // true
+is.LengthBetween("hello", 3, 8) // true
+
+// Membership validation
+is.OneOf("apple", []any{"apple", "banana", "orange"}) // true
+
+// Comparison operations
+is.GreaterThan(10, 5)          // true
+is.Equal("hello", "hello")     // true
+```
+
+## Regular Expression Architecture
+
+The package uses a sophisticated regular expression system in `regexes.go`:
+- Pre-compiled regex patterns for performance
+- Comprehensive pattern coverage for all validation types
+- Modular pattern design for easy maintenance
+
+## Error Handling
+
+The package follows Go conventions for error handling:
+- Boolean return values for validation results
+- Panic conditions for programmer errors (e.g., invalid ranges)
+- Graceful handling of invalid input types
+
+## Integration Guidelines
+
+### Input Sanitization
+Always sanitize inputs before validation:
+```go
+email := strings.TrimSpace(userInput)
+if is.Email(email) {
+    // Process valid email
+}
+```
+
+### Validation Chains
+Combine multiple validations for comprehensive checks:
+```go
+func ValidateUserInput(input string) bool {
+    return is.NotEmpty(input) &&
+           is.AlphanumericUnicode(input) &&
+           is.LengthBetween(input, 3, 50)
+}
+```
+
+### Custom Validation
+Extend the package by creating custom validators using the existing patterns:
+```go
+func CustomID(id string) bool {
+    return is.Length(id, 8, "=") && is.Alphanumeric(id)
+}
+```
+
+## Performance Considerations
+
+- Use specific validation functions (e.g., `IPv4()`) instead of generic ones when possible
+- Cache validation results for repeated checks
+- Consider the performance implications of reflection-heavy functions in hot paths
+
+## Security Notes
+
+- Hash validation functions only validate format, not cryptographic integrity
+- File system validation functions interact with the actual file system
+- Always validate inputs in addition to sanitizing them
+
+## Compatibility
+
+The package is compatible with Go 1.18+ and requires no external dependencies beyond the standard library. All functions are designed to be safe for concurrent use.

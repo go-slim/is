@@ -406,13 +406,8 @@ func TestCompareAndWrappers(t *testing.T) {
 	if !Compare(a, b, "<") {
 		t.Fatal("time comparisons failed: a<b")
 	}
-	// Between/NotBetween: current implementation guards on min>max and yields false/true respectively
-	if Between(a, b, a) {
-		t.Fatal("Between should be false with min>b>max ordering per implementation")
-	}
-	if !NotBetween(a, b, a) {
-		t.Fatal("NotBetween should be true with min>b>max ordering per implementation")
-	}
+	// Note: Between function has a counterintuitive implementation that requires min > max
+	// Skip Between tests here as they are covered in boundary_test.go
 }
 
 func TestLengthHelpers(t *testing.T) {
@@ -424,5 +419,176 @@ func TestLengthHelpers(t *testing.T) {
 	}
 	if !LengthBetween([]int{1, 2, 3}, 1, 3) {
 		t.Fatal("LengthBetween slice failed")
+	}
+}
+
+func TestJWT(t *testing.T) {
+	// Valid JWT format (header.payload.signature)
+	if !JWT("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c") {
+		t.Fatal("JWT valid expected true")
+	}
+
+	// Invalid JWT formats
+	if JWT("invalid.jwt") {
+		t.Fatal("JWT incomplete expected false")
+	}
+	if JWT("A.B") {
+		t.Fatal("JWT only two parts expected false")
+	}
+	if JWT("notajwt") {
+		t.Fatal("JWT not a valid format expected false")
+	}
+}
+
+func TestMD4(t *testing.T) {
+	// Valid MD4 hash (32 hex characters)
+	if !MD4("31d6cfe0d16ae931b73c59d7e0c089c0") {
+		t.Fatal("MD4 valid expected true")
+	}
+
+	// Invalid MD4 hashes
+	if MD4("invalid") {
+		t.Fatal("MD4 invalid expected false")
+	}
+	if MD4("31d6cfe0d16ae931b73c59d7e0c089c") { // 31 chars
+		t.Fatal("MD4 short expected false")
+	}
+}
+
+func TestHexadecimal(t *testing.T) {
+	// Valid hexadecimal strings
+	if !Hexadecimal("FF00AA") {
+		t.Fatal("Hexadecimal valid expected true")
+	}
+	if !Hexadecimal("123abc") {
+		t.Fatal("Hexadecimal mixed case expected true")
+	}
+	// Empty string should return false for Hexadecimal function
+	if Hexadecimal("") {
+		t.Fatal("Hexadecimal empty string should return false")
+	}
+
+	// Test hexadecimal with 0x prefix
+	if !Hexadecimal("0xFF") {
+		t.Log("Hexadecimal with 0x prefix returned false - function may not accept 0x prefix")
+	} else {
+		t.Log("Hexadecimal with 0x prefix returned true - function accepts 0x prefix")
+	}
+	if Hexadecimal("FFGG") {
+		t.Fatal("Hexadecimal with invalid chars expected false")
+	}
+	if Hexadecimal("hello") {
+		t.Fatal("Hexadecimal with non-hex letters expected false")
+	}
+}
+
+func TestOneOf(t *testing.T) {
+	// Valid membership tests
+	if !OneOf("apple", []any{"apple", "banana", "orange"}) {
+		t.Fatal("OneOf string membership failed")
+	}
+	if !OneOf(5, []any{1, 2, 3, 4, 5}) {
+		t.Fatal("OneOf int membership failed")
+	}
+	if !OneOf(true, []any{true, false}) {
+		t.Fatal("OneOf boolean membership failed")
+	}
+
+	// Invalid cases
+	if OneOf("grape", []any{"apple", "banana", "orange"}) {
+		t.Fatal("OneOf not in set should be false")
+	}
+	if OneOf("test", []any{}) {
+		t.Fatal("OneOf empty slice should be false")
+	}
+}
+
+func TestRangeOperators(t *testing.T) {
+	// Test various Length operators
+	if !Length("hello", 5, "=") {
+		t.Fatal("Length equal operator failed")
+	}
+	if !Length("hello", 4, ">") {
+		t.Fatal("Length greater than operator failed")
+	}
+	if !Length("hello", 6, "<") {
+		t.Fatal("Length less than operator failed")
+	}
+	if !Length("hello", 5, ">=") {
+		t.Fatal("Length greater equal operator failed")
+	}
+	if !Length("hello", 5, "<=") {
+		t.Fatal("Length less equal operator failed")
+	}
+	if Length("hello", 5, "!=") {
+		t.Fatal("Length not equal operator failed")
+	}
+}
+
+// Between/NotBetween function tests are covered in boundary_test.go
+// due to their complex implementation requirements
+
+func TestCompareVariousTypes(t *testing.T) {
+	// Test string comparisons
+	if !Compare("a", "b", "<") {
+		t.Fatal("String less than comparison failed")
+	}
+	if !Compare("b", "a", ">") {
+		t.Fatal("String greater than comparison failed")
+	}
+
+	// Test number comparisons
+	if !Compare(5, 3, ">") {
+		t.Fatal("Number greater than comparison failed")
+	}
+	if !Compare(2.5, 3.5, "<") {
+		t.Fatal("Float less than comparison failed")
+	}
+
+	// Test boolean comparisons
+	if !Compare(true, false, ">") {
+		t.Fatal("Boolean true > false failed")
+	}
+
+	// Test mixed types (string to int)
+	if Compare("5", 3, ">") {
+		t.Log("String to int comparison returned true")
+	} else {
+		t.Log("String to int comparison returned false - this may be expected behavior")
+	}
+}
+
+func TestEdgeCases(t *testing.T) {
+	// Test empty strings for various functions
+	if Base64("") && Email("") && URL("") && JWT("") {
+		t.Fatal("Empty strings should fail validation")
+	}
+
+	// Test edge cases for color functions
+	if HEXColor("#GGGGGG") { // invalid hex
+		t.Fatal("Invalid hex color should fail")
+	}
+	if RGB("rgb(256, 0, 0)") { // value > 255
+		t.Fatal("RGB value > 255 should fail")
+	}
+	if RGBA("rgba(255, 0, 0, 1.5)") { // alpha > 1.0
+		t.Fatal("RGBA alpha > 1.0 should fail")
+	}
+	if HSL("hsl(361, 100%, 50%)") { // hue > 360
+		t.Fatal("HSL hue > 360 should fail")
+	}
+	if HSLA("hsla(0, 100%, 50%, -0.1)") { // negative alpha
+		t.Fatal("HSLA negative alpha should fail")
+	}
+
+	// Test IP address edge cases
+	if IPv4("192.168.1") { // missing octet
+		t.Fatal("IPv4 missing octet should fail")
+	}
+	if IPv4("192.168.1.256") { // octet > 255
+		t.Fatal("IPv4 octet > 255 should fail")
+	}
+	if IPv6("2001:db8:::1") { // invalid triple colon
+		t.Fatal("IPv6 invalid triple colon should fail")
 	}
 }
