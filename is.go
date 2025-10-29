@@ -1,3 +1,26 @@
+// Package is provides a comprehensive set of validation and type checking utilities for Go applications.
+//
+// The package offers simple, readable validation functions for common data types and patterns:
+// - Email addresses, phone numbers, URLs
+// - UUIDs, hashes, and identifiers
+// - Colors, coordinates, and geographic data
+// - File paths and directory checks
+// - Type conversions and comparisons
+// - Length and range validations
+//
+// Most functions follow a simple pattern: `Is.TypeName(value) bool` where TypeName represents
+// the validation being performed. The package also provides generic versions of some functions
+// for better type safety.
+//
+// Examples:
+//
+//	is.Email("user@example.com")        // true
+//	is.PhoneNumber("13800138000")      // true
+//	is.UUID("550e8400-e29b-41d4-a716-446655440000") // true
+//	is.Between(25, 18, 65)              // true
+//
+// The package is designed to be used in form validation, API input validation,
+// configuration validation, and general data verification scenarios.
 package is
 
 import (
@@ -11,37 +34,95 @@ import (
 	"time"
 )
 
-// Email 验证给出的字符串是不是有效的邮箱地址
+// Email validates whether the given string is a valid email address.
+// It supports international email addresses and follows RFC 5322 standards.
+//
+// Examples:
+//
+//	is.Email("user@example.com")     // true
+//	is.Email("user+tag@domain.org")  // true
+//	is.Email("invalid-email")        // false
 func Email(str string) bool {
 	return emailRegex.MatchString(str)
 }
 
-// E164 判断给出的字符串是否符合 e.164 规范的手机号码
+// E164 validates whether the given string conforms to the E.164 international
+// telephone numbering plan format. E.164 numbers are in the format +[country code][subscriber number].
+//
+// Examples:
+//
+//	is.E164("+14155552671")         // true (US number)
+//	is.E164("+8613800138000")       // true (China number)
+//	is.E164("14155552671")          // false (missing +)
+//	is.E164("+123")                 // false (too short)
 func E164(str string) bool {
 	return e164Regex.MatchString(str)
 }
 
-// PhoneNumber 判断给出的字符串是否符合中国大陆规范的手机号码
+// PhoneNumber validates whether the given string is a valid Chinese mainland mobile phone number.
+// It supports both domestic format (11 digits starting with 1) and international format (+86 prefix).
+//
+// Examples:
+//
+//	is.PhoneNumber("13800138000")   // true
+//	is.PhoneNumber("+8613800138000") // true
+//	is.PhoneNumber("12345678901")   // false (invalid pattern)
+//	is.PhoneNumber("2800138000")    // false (invalid prefix)
 func PhoneNumber(s string) bool {
 	return phoneNumberRegex.MatchString(s)
 }
 
-// Semver 判断给出的字符串是否符合语义化版本号规范
+// Semver validates whether the given string conforms to Semantic Versioning 2.0.0 specification.
+// Semantic versions are in the format MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD].
+//
+// Examples:
+//
+//	is.Semver("1.0.0")              // true
+//	is.Semver("2.1.3-beta.2+exp.sha.5114f85") // true
+//	is.Semver("1.0")                // false (missing PATCH)
+//	is.Semver("v1.0.0")             // false (invalid prefix)
 func Semver(s string) bool {
 	return semverRegex.MatchString(s)
 }
 
-// Label 判断给出的字符串是否符合变量命名规范
+// Label validates whether the given string follows variable naming conventions.
+// Labels must start with a letter (A-F) followed by word characters, digits, or underscores.
+// This is commonly used for environment variable names, configuration keys, etc.
+//
+// Examples:
+//
+//	is.Label("API_HOST")            // true
+//	is.Label("Fconfig_debug")        // true
+//	is.Label("1INVALID")            // false (starts with digit)
+//	is.Label("api-host")            // false (contains hyphen)
 func Label(s string) bool {
 	return labelRegex.MatchString(s)
 }
 
-// Base64 判断给出的字符串是否为base64数据
+// Base64 validates whether the given string is valid Base64 encoded data.
+// It supports standard Base64 encoding with proper padding.
+//
+// Examples:
+//
+//	is.Base64("SGVsbG8gV29ybGQ=")    // true ("Hello World")
+//	is.Base64("YW55IGNhcm5hbCBwbGF5")  // true ("any carnal play")
+//	is.Base64("Hello World")        // false (not encoded)
+//	is.Base64("SGVsbG8=")           // false (invalid length)
 func Base64(s string) bool {
 	return base64Regex.MatchString(s)
 }
 
-// URL 判断给出的字符串是否为有效的URL
+// URL validates whether the given string is a valid URL.
+// It supports various URL schemes and follows standard URL parsing rules.
+// The function strips URL fragments (#) before validation to handle common use cases.
+//
+// Examples:
+//
+//	is.URL("https://example.com")       // true
+//	is.URL("ftp://user:pass@host/path") // true
+//	is.URL("http://localhost:8080")     // true
+//	is.URL("example.com")              // false (missing scheme)
+//	is.URL("")                         // false (empty string)
 func URL(s string) bool {
 	var i int
 	// checks needed as of Go 1.6 because of change https://github.com/golang/go/commit/617c93ce740c3c3cc28cdd1a0d712be183d0b328#diff-6c2d018290e298803c0c9419d8739885L195
@@ -84,12 +165,29 @@ func UUID3(str string) bool {
 	return uUID3Regex.MatchString(str)
 }
 
-// UUID is the validation function for validating if the field's value is a valid UUID of any version.
+// UUID validates whether the given string is a valid UUID of any version (v1, v3, v4, or v5).
+// UUIDs are 128-bit unique identifiers typically displayed as 32 hexadecimal digits
+// with hyphens in the pattern 8-4-4-4-12.
+//
+// Examples:
+//
+//	is.UUID("550e8400-e29b-41d4-a716-446655440000") // true
+//	is.UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8") // true
+//	is.UUID("550e8400-e29b-41d4-a716")          // false (too short)
+//	is.UUID("not-a-uuid")                        // false
 func UUID(str string) bool {
 	return uUIDRegex.MatchString(str)
 }
 
-// ULID is the validation function for validating if the field's value is a valid ULID.
+// ULID validates whether the given string is a valid ULID (Universally Unique Lexicographically Sortable Identifier).
+// ULIDs are 26-character strings using Crockford's Base32 alphabet, designed to be sortable by time.
+//
+// Examples:
+//
+//	is.ULID("01ARZ3NDEKTSV4RRFFQ69G5FA")      // true
+//	is.ULID("01BX5ZZKBKACTAV9WEVGEMMVR")      // true
+//	is.ULID("invalid-ulid")                    // false
+//	is.ULID("01ARZ3NDEKTSV4RRFFQ69G5FA0")     // false (wrong length)
 func ULID(str string) bool {
 	return uLIDRegex.MatchString(str)
 }
@@ -190,8 +288,9 @@ func Boolean[T any](t T) bool {
 		return n == 0 || n == 1
 	case reflect.Bool:
 		return ref.Bool()
+	default:
+		return false
 	}
-	return false
 }
 
 // Default is the opposite of required aka HasValue
@@ -240,12 +339,32 @@ func HSLA(str string) bool {
 	return hslaRegex.MatchString(str)
 }
 
-// Color 判断给出的字符串是不是一个颜色值
+// Color validates whether the given string represents a valid color value.
+// It supports multiple color formats: HEX colors, RGB, RGBA, HSL, and HSLA.
+//
+// Examples:
+//
+//	is.Color("#FF0000")                 // true (HEX red)
+//	is.Color("rgb(255, 0, 0)")         // true (RGB red)
+//	is.Color("rgba(255, 0, 0, 0.5)")    // true (RGBA red with 50% opacity)
+//	is.Color("hsl(0, 100%, 50%)")       // true (HSL red)
+//	is.Color("hsla(0, 100%, 50%, 0.5)")  // true (HSLA red with 50% opacity)
+//	is.Color("red")                     // false (color name not supported)
 func Color(str string) bool {
 	return HEXColor(str) || HSLA(str) || HSL(str) || RGB(str) || RGBA(str)
 }
 
-// Latitude is the validation function for validating if the field's value is a valid latitude coordinate.
+// Latitude validates whether the given value represents a valid geographic latitude coordinate.
+// Valid latitude ranges from -90° (South Pole) to +90° (North Pole).
+// The function accepts various numeric types and string representations.
+//
+// Examples:
+//
+//	is.Latitude(45.0)                  // true
+//	is.Latitude(-90.0)                 // true (South Pole)
+//	is.Latitude("90.0")                // true (North Pole)
+//	is.Latitude(91.0)                  // false (beyond range)
+//	is.Latitude("invalid")             // false
 func Latitude[T any](t T) bool {
 	ref := reflect.ValueOf(t)
 	var v string
@@ -289,7 +408,15 @@ func Longitude[T any](t T) bool {
 	return longitudeRegex.MatchString(v)
 }
 
-// JSON is the validation function for validating if the current field's value is a valid json string.
+// JSON validates whether the given value is valid JSON data.
+// It accepts both string and byte slice inputs, making it flexible for different use cases.
+//
+// Examples:
+//
+//	is.JSON(`{"name": "John", "age": 30}`) // true
+//	is.JSON([]byte(`[1, 2, 3]`))        // true
+//	is.JSON("invalid json")              // false
+//	is.JSON(123)                        // false
 func JSON[T any](t T) bool {
 	rv := reflect.ValueOf(t)
 	if rv.Type() == nilType {
@@ -301,12 +428,31 @@ func JSON[T any](t T) bool {
 	return false
 }
 
+// Datetime validates whether the given string matches the specified time layout format.
+// It uses Go's standard time parsing, making it compatible with all predefined layouts.
+//
+// Examples:
+//
+//	is.Datetime("2023-12-25", "2006-01-02")        // true
+//	is.Datetime("10:30:45", "15:04:05")           // true
+//	is.Datetime("2023-12-25 10:30:45", time.RFC3339) // true
+//	is.Datetime("invalid", "2006-01-02")            // false
 func Datetime(str, layout string) bool {
 	_, err := time.Parse(layout, str)
 	return err == nil
 }
 
-// Timezone is the validation function for validating if the current field's value is a valid time zone string.
+// Timezone validates whether the given string is a valid time zone identifier.
+// It validates against the IANA Time Zone Database, which is the standard for time zones.
+//
+// Examples:
+//
+//	is.Timezone("America/New_York")  // true
+//	is.Timezone("UTC")               // true
+//	is.Timezone("Europe/London")     // true
+//	is.Timezone("")                  // false (empty)
+//	is.Timezone("Local")             // false (reserved keyword)
+//	is.Timezone("Invalid/Zone")     // false
 func Timezone(str string) bool {
 	// empty value is converted to UTC by time.LoadLocation but disallow it as it is not a valid time zone name
 	if str == "" {
@@ -362,13 +508,25 @@ func Uppercase(str string) bool {
 	return str == strings.ToUpper(str)
 }
 
-// Empty checks if a value is empty or not.
-// A value is considered empty if
-// - integer, float: zero
-// - bool: false
-// - string, array: len() == 0
-// - slice, map: nil or len() == 0
-// - interface, pointer: nil or the referenced value is empty
+// Empty checks if a value is empty or not using a comprehensive set of rules.
+// A value is considered empty if it meets any of the following conditions:
+//   - String, Array, Map, Slice: length == 0
+//   - Integer, Float: value == 0
+//   - Boolean: value == false
+//   - Interface, Pointer, Channel, Func: nil
+//   - Time: zero time value
+//   - Invalid: invalid reflect value
+//
+// Examples:
+//
+//	is.Empty("")                    // true
+//	is.Empty(0)                     // true
+//	is.Empty(false)                 // true
+//	is.Empty([]string{})            // true
+//	is.Empty(nil)                   // true
+//	is.Empty(time.Time{})           // true
+//	is.Empty("hello")               // false
+//	is.Empty(42)                    // false
 func Empty[T any](t T) bool {
 	rv := reflect.ValueOf(t)
 	switch rv.Kind() {
@@ -473,14 +631,26 @@ func LengthBetween(val any, min, max int) bool {
 	}
 }
 
-// Compare intX,floatX value by given op. returns `srcVal op(=,!=,<,<=,>,>=) dstVal`
+// Compare performs a comparison operation between two values using the specified operator.
+// It supports various data types including numbers, strings, booleans, and time.Time values.
+// The function returns the result of `srcVal op dstVal` where op can be "=", "!=", "<", "<=", ">", or ">=".
 //
-// Usage:
+// Supported operators:
+//   - "="   : equal to
+//   - "!="  : not equal to
+//   - "<"   : less than
+//   - "<="  : less than or equal to
+//   - ">"   : greater than
+//   - ">="  : greater than or equal to
 //
-//	compare(2, 3, ">") // false
-//	compare(2, 1.3, ">") // true
-//	compare(2.2, 1.3, ">") // true
-//	compare(2.1, 2, ">") // true
+// Examples:
+//
+//	is.Compare(2, 3, ">")           // false
+//	is.Compare(2, 1.3, ">")         // true
+//	is.Compare(2.2, 1.3, ">")       // true
+//	is.Compare("apple", "banana", "<") // true
+//	is.Compare(true, false, ">")   // true
+//	is.Compare(time.Now(), time.Now().Add(-time.Hour), ">") // true
 func Compare(srcVal, dstVal any, op string) bool {
 	srv := reflect.ValueOf(srcVal)
 

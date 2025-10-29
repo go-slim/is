@@ -11,15 +11,34 @@ import (
 	"unicode/utf8"
 )
 
+// Error definitions for the is package
 var (
-	ErrBadType  = errors.New("bad value type")
-	ErrBadRange = errors.New("bad value range")
+	// ErrBadType is returned when a value has an unsupported or unexpected type
+	ErrBadType = errors.New("bad value type")
 
-	timeType = reflect.TypeOf(time.Time{})
-	nilType  = reflect.TypeOf([]byte(nil))
+	// ErrBadRange is returned when a range validation has invalid parameters (min > max)
+	ErrBadRange = errors.New("bad value range")
 )
 
-// convert value to float64, return error on failed
+// Pre-allocated reflect types for type checking optimization
+var (
+	// timeType holds the reflect.Type for time.Time for faster type comparisons
+	timeType = reflect.TypeOf(time.Time{})
+
+	// nilType holds the reflect.Type for nil byte slice for JSON validation
+	nilType = reflect.TypeOf([]byte(nil))
+)
+
+// toFloat converts any value to float64.
+// It supports numeric types, time.Duration, and string representations.
+// Returns ErrBadType if the conversion is not possible.
+//
+// Supported input types:
+//   - Numeric types (int, uint, float variants)
+//   - time.Duration
+//   - json.Number
+//   - string (parsable as float)
+//   - nil (returns 0)
 func toFloat(in any) (f64 float64, err error) {
 	switch tVal := in.(type) {
 	case nil:
@@ -60,7 +79,16 @@ func toFloat(in any) (f64 float64, err error) {
 	return
 }
 
-// convert string to int64, return error on failed
+// toInt64 converts any value to int64.
+// It supports numeric types, time.Duration, and string representations.
+// Returns ErrBadType if the conversion is not possible.
+//
+// Supported input types:
+//   - Numeric types (int, uint, float variants)
+//   - time.Duration
+//   - json.Number
+//   - string (parsable as integer)
+//   - nil (returns 0)
 func toInt64(in any) (i64 int64, err error) {
 	switch tVal := in.(type) {
 	case nil:
@@ -101,7 +129,9 @@ func toInt64(in any) (i64 int64, err error) {
 	return
 }
 
-// compString compare string, returns the first op second
+// compString compares two strings using the specified operator.
+// It uses Go's strings.Compare for lexicographical comparison.
+// Returns the result of `first op second`.
 func compString(first, second, op string) bool {
 	rs := strings.Compare(first, second)
 	if rs < 0 {
@@ -113,6 +143,9 @@ func compString(first, second, op string) bool {
 	}
 }
 
+// compTime compares two time.Time values using the specified operator.
+// It supports temporal comparison operators and uses Go's built-in time comparison methods.
+// Returns the result of `first op dstTime`.
 func compTime(first, dstTime time.Time, op string) (ok bool) {
 	switch op {
 	case "<":
@@ -131,6 +164,9 @@ func compTime(first, dstTime time.Time, op string) (ok bool) {
 	return
 }
 
+// compNum compares two numeric values using the specified operator.
+// This is a generic function that works with int64, float64, and uint64 types.
+// Returns the result of `first op second`.
 func compNum[T int64 | float64 | uint64](first, second T, op string) bool {
 	switch op {
 	case "<":
@@ -149,10 +185,15 @@ func compNum[T int64 | float64 | uint64](first, second T, op string) bool {
 	return false
 }
 
+// compBool compares two boolean values using the specified operator.
+// Internally converts booleans to integers (false=0, true=1) for comparison.
+// Returns the result of `first op second`.
 func compBool(first, second bool, op string) bool {
 	return compNum(boolToInt(first), boolToInt(second), op)
 }
 
+// boolToInt converts a boolean value to an integer representation.
+// Returns 1 for true, 0 for false.
 func boolToInt(a bool) int64 {
 	if a {
 		return 1
@@ -161,7 +202,9 @@ func boolToInt(a bool) int64 {
 	}
 }
 
-// get reflect value length
+// calcLength calculates the length of a value for validation purposes.
+// Returns -1 if the value type doesn't support length calculation.
+// Handles strings, arrays, maps, slices, and numeric types differently.
 func calcLength(val any) int {
 	v := reflect.Indirect(reflect.ValueOf(val))
 
@@ -177,10 +220,10 @@ func calcLength(val any) int {
 		return len(strconv.FormatInt(v.Int(), 10))
 	case reflect.Float32, reflect.Float64:
 		return len(fmt.Sprint(v.Interface()))
+	default:
+		// cannot get length
+		return -1
 	}
-
-	// cannot get length
-	return -1
 }
 
 func getLength(a any, rune bool) (int, error) {
@@ -205,7 +248,9 @@ func getLength(a any, rune bool) (int, error) {
 			// 类型声明中的长度
 			return field.Type().Elem().Len(), nil
 		}
-	}
+		return 0, ErrBadType
 
-	return 0, ErrBadType
+	default:
+		return 0, ErrBadType
+	}
 }
