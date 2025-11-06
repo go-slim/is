@@ -119,7 +119,7 @@ func Test_compBool_boolToInt(t *testing.T) {
 }
 
 func Test_calcLength(t *testing.T) {
-	if calcLength("你好") != 2 {
+	if calcLength("café") != 4 {
 		t.Fatal("calcLength runes failed")
 	}
 	if calcLength([]int{1, 2, 3}) != 3 {
@@ -138,8 +138,8 @@ func Test_getLength(t *testing.T) {
 	if err != nil || n != 3 {
 		t.Fatalf("getLength string failed: %v %d", err, n)
 	}
-	n, err = getLength("你好", true)
-	if err != nil || n != 2 {
+	n, err = getLength("café", true)
+	if err != nil || n != 4 {
 		t.Fatalf("getLength rune string failed: %v %d", err, n)
 	}
 	n, err = getLength([]int{1, 2, 3}, false)

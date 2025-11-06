@@ -59,19 +59,6 @@ func E164(str string) bool {
 	return e164Regex.MatchString(str)
 }
 
-// PhoneNumber validates whether the given string is a valid Chinese mainland mobile phone number.
-// It supports both domestic format (11 digits starting with 1) and international format (+86 prefix).
-//
-// Examples:
-//
-//	is.PhoneNumber("13800138000")   // true
-//	is.PhoneNumber("+8613800138000") // true
-//	is.PhoneNumber("12345678901")   // false (invalid pattern)
-//	is.PhoneNumber("2800138000")    // false (invalid prefix)
-func PhoneNumber(s string) bool {
-	return phoneNumberRegex.MatchString(s)
-}
-
 // Semver validates whether the given string conforms to Semantic Versioning 2.0.0 specification.
 // Semantic versions are in the format MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD].
 //
@@ -302,7 +289,7 @@ func SHA512(str string) bool {
 //	is.ASCII("Hello World")         // true
 //	is.ASCII("12345")               // true
 //	is.ASCII("Héllo")               // false (contains é)
-//	is.ASCII("你好")                // false (Chinese characters)
+//	is.ASCII("Bonjour")             // true (ASCII characters)
 //	is.ASCII("")                    // true (empty string)
 func ASCII(str string) bool {
 	return aSCIIRegex.MatchString(str)
@@ -350,7 +337,7 @@ func Alphanumeric(str string) bool {
 //	is.AlphaUnicode("Hello")           // true
 //	is.AlphaUnicode("Héllo")           // true (contains é)
 //	is.AlphaUnicode("Привет")          // true (Cyrillic)
-//	is.AlphaUnicode("你好")            // true (Chinese)
+//	is.AlphaUnicode("Café")            // true (French with accent)
 //	is.AlphaUnicode("مرحبا")           // true (Arabic)
 //	is.AlphaUnicode("Hello123")        // false (contains numbers)
 //	is.AlphaUnicode("Hello World")     // false (contains space)
@@ -367,7 +354,7 @@ func AlphaUnicode(str string) bool {
 //	is.AlphanumericUnicode("Hello123")     // true
 //	is.AlphanumericUnicode("Héllo123")     // true (contains é)
 //	is.AlphanumericUnicode("Привет123")    // true (Cyrillic with numbers)
-//	is.AlphanumericUnicode("你好123")      // true (Chinese with numbers)
+//	is.AlphanumericUnicode("Café123")      // true (French with accent)
 //	is.AlphanumericUnicode("مرحبا123")     // true (Arabic with numbers)
 //	is.AlphanumericUnicode("Hello 123")    // false (contains space)
 //	is.AlphanumericUnicode("Hello-123")    // false (contains hyphen)
@@ -435,7 +422,7 @@ func Default(val any) bool {
 func HasValue(val any) bool {
 	rv := reflect.ValueOf(val)
 	switch rv.Kind() {
-	case reflect.Slice, reflect.Map, reflect.Ptr, reflect.Interface, reflect.Chan, reflect.Func:
+	case reflect.Slice, reflect.Map, reflect.Pointer, reflect.Interface, reflect.Chan, reflect.Func:
 		return !rv.IsNil()
 	default:
 		return rv.IsValid() && rv.Interface() != reflect.Zero(rv.Type()).Interface()
@@ -765,7 +752,7 @@ func MAC(str string) bool {
 //
 //	is.Lowercase("hello world")       // true
 //	is.Lowercase("test123")           // true (numbers are ignored)
-//	is.Lowercase("你好")              // true (Chinese characters are ignored)
+//	is.Lowercase("café")              // true (accented characters are preserved)
 //	is.Lowercase("Hello World")       // false (contains uppercase H and W)
 //	is.Lowercase("HELLO")             // false (all uppercase)
 //	is.Lowercase("")                  // false (empty string)
@@ -785,7 +772,7 @@ func Lowercase(str string) bool {
 //
 //	is.Uppercase("HELLO WORLD")       // true
 //	is.Uppercase("TEST123")           // true (numbers are ignored)
-//	is.Uppercase("你好")              // true (Chinese characters are ignored)
+//	is.Uppercase("CAFÉ")              // true (accented characters are preserved)
 //	is.Uppercase("Hello World")       // false (contains lowercase h and w)
 //	is.Uppercase("hello")             // false (all lowercase)
 //	is.Uppercase("")                  // false (empty string)
@@ -830,7 +817,7 @@ func Empty[T any](t T) bool {
 		return rv.Float() == 0
 	case reflect.Invalid:
 		return true
-	case reflect.Interface, reflect.Ptr:
+	case reflect.Interface, reflect.Pointer:
 		if rv.IsNil() {
 			return true
 		}

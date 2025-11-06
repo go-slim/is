@@ -226,12 +226,15 @@ func calcLength(val any) int {
 	}
 }
 
+// getLength calculates the length of a value for validation purposes.
+// Returns an error if the value type doesn't support length calculation.
+// The rune parameter determines whether to count Unicode runes or bytes for strings.
+// Handles strings, arrays, maps, slices, and pointer to arrays.
+//
+// When rune is true: counts Unicode runes (characters) for strings
+// When rune is false: counts bytes for strings
 func getLength(a any, rune bool) (int, error) {
 	field := reflect.ValueOf(a)
-
-	//if !field.IsValid() || field.IsNil() {
-	//	return 0, nil
-	//}
 
 	switch field.Kind() {
 	case reflect.String:
@@ -243,9 +246,9 @@ func getLength(a any, rune bool) (int, error) {
 	case reflect.Slice, reflect.Map, reflect.Array:
 		return field.Len(), nil
 
-	case reflect.Ptr:
+	case reflect.Pointer:
 		if field.Type().Elem().Kind() == reflect.Array {
-			// 类型声明中的长度
+			// Length from type declaration for pointer to arrays
 			return field.Type().Elem().Len(), nil
 		}
 		return 0, ErrBadType
