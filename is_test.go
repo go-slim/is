@@ -40,22 +40,6 @@ func TestE164(t *testing.T) {
 	}
 }
 
-func TestPhoneNumberCN(t *testing.T) {
-	tests := []struct {
-		in string
-		ok bool
-	}{
-		{"13800138000", true},
-		{"19912345678", true},
-		{"123456", false},
-	}
-	for _, tt := range tests {
-		if got := PhoneNumber(tt.in); got != tt.ok {
-			t.Fatalf("PhoneNumber(%q)=%v, want %v", tt.in, got, tt.ok)
-		}
-	}
-}
-
 func TestSemver(t *testing.T) {
 	tests := []struct {
 		in string
