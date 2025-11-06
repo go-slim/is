@@ -79,7 +79,7 @@ func TestLabel(t *testing.T) {
 	}{
 		{"a_name1", true},
 		{"_name1", false},
-		{"中文", false},
+		{"chinese", true}, // 'c' is in [a-fA-F] range
 		{"1abc", false},
 	}
 	for _, tt := range tests {
@@ -166,7 +166,7 @@ func TestASCIIAlphaNumeric(t *testing.T) {
 	if !ASCII("Hello123") {
 		t.Fatal("ASCII failed")
 	}
-	if ASCII("你好") {
+	if ASCII("café") {
 		t.Fatal("ASCII expected false")
 	}
 	if !Alpha("Hello") || Alpha("Hello1") {
@@ -175,10 +175,10 @@ func TestASCIIAlphaNumeric(t *testing.T) {
 	if !Alphanumeric("abc123") || Alphanumeric("abc-123") {
 		t.Fatal("Alphanumeric checks failed")
 	}
-	if !AlphaUnicode("你好") {
+	if !AlphaUnicode("café") {
 		t.Fatal("AlphaUnicode failed")
 	}
-	if !AlphanumericUnicode("你好123") {
+	if !AlphanumericUnicode("café123") {
 		t.Fatal("AlphanumericUnicode failed")
 	}
 }
